@@ -1,19 +1,19 @@
 DROP TABLE IF EXISTS tasks_labels, tasks, labels, users;
 
 -- пользователи системы
-CREATE TABLE users (
+CREATE IF NOT EXISTS TABLE users (
                        id SERIAL PRIMARY KEY,
                        name TEXT NOT NULL
 );
 
 -- метки задач
-CREATE TABLE labels (
+CREATE IF NOT EXISTS TABLE labels (
                         id SERIAL PRIMARY KEY,
                         name TEXT NOT NULL
 );
 
 -- задачи
-CREATE TABLE tasks (
+CREATE IF NOT EXISTS TABLE tasks (
                        id SERIAL PRIMARY KEY,
                        opened BIGINT NOT NULL DEFAULT extract(epoch from now()), -- время создания задачи
                        closed BIGINT DEFAULT 0, -- время выполнения задачи
@@ -24,7 +24,7 @@ CREATE TABLE tasks (
     );
 
 -- связь многие - ко- многим между задачами и метками
-CREATE TABLE tasks_labels (
+CREATE IF NOT EXISTS TABLE tasks_labels (
                               task_id INTEGER REFERENCES tasks(id),
                               label_id INTEGER REFERENCES labels(id)
 );

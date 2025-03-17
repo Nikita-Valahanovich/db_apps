@@ -1,14 +1,18 @@
-package storage
+package postgres
 
 import (
 	"context"
-
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 // Хранилище данных.
 type Storage struct {
 	db *pgxpool.Pool
+}
+
+// NewStorage создаёт новый экземпляр Storage
+func NewStorage(db *pgxpool.Pool) *Storage {
+	return &Storage{db: db}
 }
 
 // Конструктор, принимает строку подключения к БД.
@@ -83,14 +87,55 @@ func (s *Storage) Tasks(taskID, authorID int) ([]Task, error) {
 }
 
 // NewTask создаёт новую задачу и возвращает её id.
-func (s *Storage) NewTask(t Task) (int, error) {
-	var id int
-	err := s.db.QueryRow(context.Background(), `
-		INSERT INTO tasks (title, content)
-		VALUES ($1, $2) RETURNING id;
-		`,
-		t.Title,
-		t.Content,
-	).Scan(&id)
-	return id, err
+func (s *Storage) NewTask(task Task) (int, error) {
+	var taskID int
+
+	query := `
+		INSERT INTO tasks (opened, closed, author_id, assigned_id, title, content)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id;
+	`
+
+	err := s.db.QueryRow(context.Background(), query,
+		task.Opened, task.Closed, task.AuthorID, task.AssignedID, task.Title, task.Content,
+	).Scan(&taskID)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return taskID, nil
+}
+
+// DeleteTask удаляет задачу по id
+func (s *Storage) DeleteTask(id int) (int, error) {
+	_, err := s.db.Exec(context.Background(), `
+		DELETE FROM tasks (id)
+		WHERE id = $1;
+	`,
+		id,
+	)
+
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
+}
+
+// UpdateTask обновляет задачу по id
+func (s *Storage) UpdateTask(id int, task Task) (int, error) {
+	_, err := s.db.Exec(context.Background(), `
+		UPDATE tasks (author_id, assigned_id, title, content)
+		SET author_id = $2, assigned_id = $3, title = $4, content = $5
+		WHERE id = $1;
+	`,
+		id, task.AuthorID, task.AssignedID, task.Title, task.Content,
+	)
+
+	if err != nil {
+		return id, err
+	}
+
+	return id, nil
 }

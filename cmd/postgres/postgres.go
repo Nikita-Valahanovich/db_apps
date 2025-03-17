@@ -1,12 +1,11 @@
-package postgres
+package main
 
 import (
 	"context"
-	"log"
-	"os"
-
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
+	"log"
+	"os"
 )
 
 type User struct {
